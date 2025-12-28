@@ -282,9 +282,20 @@ Currently, testing is not included in the MVP. To add testing:
 
 ## Deployment
 
-### Web Dashboard
+### Web Dashboard - Vercel (Recommended)
 
-Deploy to Vercel, Netlify, or any Node.js hosting:
+See [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) for detailed deployment instructions.
+
+**Quick Steps:**
+1. Push code to GitHub (already done ✅)
+2. Import repository in Vercel
+3. Set Root Directory to `apps/web`
+4. Add environment variables in Vercel dashboard
+5. Deploy!
+
+**Manual Deployment:**
+
+Deploy to any Node.js hosting:
 
 ```bash
 cd apps/web
