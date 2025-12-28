@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && pnpm install --no-frozen-lockfile && pnpm --filter @pausely/db generate && pnpm --filter @pausely/web build",
+  "buildCommand": "cd ../.. && pnpm install --no-frozen-lockfile && cd packages/db && pnpm generate && cd ../../apps/web && pnpm build",
   "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
   "framework": "nextjs"
 }
