@@ -2,3 +2,7 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
+# Force Prisma 5.x
+overrides:
+  prisma: '5.22.0'
+  '@prisma/client': '5.22.0'
