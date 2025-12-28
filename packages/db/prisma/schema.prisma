@@ -1,0 +1,224 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ImpulseTypeEnum {
+  PHONE_USAGE
+  LATE_NIGHT_EATING
+  ONLINE_SHOPPING
+  DOOM_SCROLLING
+}
+
+enum UrgeOutcome {
+  SUCCESS
+  RELAPSE
+  ABANDONED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  INCOMPLETE
+}
+
+enum SubscriptionPlan {
+  FREE
+  PREMIUM
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  ORG_ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  role          UserRole  @default(USER)
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  profile            Profile?
+  userImpulseTypes   UserImpulseType[]
+  urgeSessions       UrgeSession[]
+  streaks            Streak?
+  subscription      Subscription?
+  organizationUsers OrganizationUser[]
+
+  @@index([email])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Profile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  firstName         String?
+  lastName          String?
+  timezone          String   @default("UTC")
+  notificationEnabled Boolean @default(true)
+  pushToken         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model ImpulseType {
+  id          String   @id @default(cuid())
+  type        ImpulseTypeEnum @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  userImpulseTypes UserImpulseType[]
+  urgeSessions     UrgeSession[]
+
+  @@map("impulse_types")
+}
+
+model UserImpulseType {
+  id             String   @id @default(cuid())
+  userId         String
+  impulseTypeId  String
+  isActive       Boolean  @default(true)
+  customTimerMinutes Int? @default(10)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impulseType ImpulseType @relation(fields: [impulseTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, impulseTypeId])
+  @@index([userId])
+  @@index([impulseTypeId])
+  @@map("user_impulse_types")
+}
+
+model UrgeSession {
+  id            String       @id @default(cuid())
+  userId        String
+  impulseTypeId String
+  outcome       UrgeOutcome?
+  timerMinutes  Int          @default(10)
+  startedAt     DateTime     @default(now())
+  completedAt   DateTime?
+  summary       String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impulseType ImpulseType @relation(fields: [impulseTypeId], references: [id], onDelete: Cascade)
+  aiMessages  AIMessage[]
+
+  @@index([userId])
+  @@index([impulseTypeId])
+  @@index([startedAt])
+  @@index([deletedAt])
+  @@map("urge_sessions")
+}
+
+model AIMessage {
+  id            String       @id @default(cuid())
+  sessionId     String
+  role          String       // "system" | "user" | "assistant"
+  content       String
+  createdAt     DateTime     @default(now())
+
+  session UrgeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("ai_messages")
+}
+
+model Streak {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  lastResetDate DateTime?
+  lastSuccessDate DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("streaks")
+}
+
+model Subscription {
+  id                String             @id @default(cuid())
+  userId             String             @unique
+  stripeCustomerId   String             @unique
+  stripeSubscriptionId String?           @unique
+  plan               SubscriptionPlan   @default(FREE)
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  canceledAt         DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@map("subscriptions")
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  seatCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  organizationUsers OrganizationUser[]
+
+  @@index([slug])
+  @@index([deletedAt])
+  @@map("organizations")
+}
+
+model OrganizationUser {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           UserRole @default(USER)
+  joinedAt       DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("organization_users")
+}
+
