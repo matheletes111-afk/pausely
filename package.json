@@ -33,11 +33,22 @@
     "overrides": {
       "prisma": "5.22.0",
       "@prisma/client": "5.22.0",
-      "@prisma/engines": "5.22.0"
+      "@prisma/engines": "5.22.0",
+      "@prisma/engines-version": "5.22.0"
     },
     "peerDependencyRules": {
       "allowedVersions": {
         "prisma": "5.22.0"
+      }
+    },
+    "packageExtensions": {
+      "@pausely/db": {
+        "dependencies": {
+          "@prisma/client": "5.22.0"
+        },
+        "devDependencies": {
+          "prisma": "5.22.0"
+        }
       }
     }
   }
